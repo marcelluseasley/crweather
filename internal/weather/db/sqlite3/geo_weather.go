@@ -112,9 +112,9 @@ func (s *Store) RetrieveWeatherFromGeo(geoID int64) (models.Weather, error) {
 func (s *Store) RetrieveGeo(latitude, longitude float64) (models.Geo, error) {
 	var geo models.Geo
 
-	row := s.db.QueryRow("SELECT id, latitude, longitude, name FROM geo WHERE latitude = ? AND longitude = ? ORDER BY id DESC", latitude, longitude)
+	row := s.db.QueryRow("SELECT id, latitude, longitude, name, access_date FROM geo WHERE latitude = ? AND longitude = ? ORDER BY id DESC", latitude, longitude)
 
-	err := row.Scan(&geo.ID, &geo.Latitude, &geo.Longitude, &geo.Name)
+	err := row.Scan(&geo.ID, &geo.Latitude, &geo.Longitude, &geo.Name, &geo.RequestDate)
 	if err != nil {
 		return models.Geo{}, err
 	}
