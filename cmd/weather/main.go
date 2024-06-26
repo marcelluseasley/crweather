@@ -17,7 +17,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not initialize the database: %v", err)
 	}
-	weatherService := service.NewWeatherService(weatherStorage)
+	httpClient := &http.Client{}
+	weatherService := service.NewWeatherService(httpClient, weatherStorage)
 	handler := rest.NewWeatherHandler(weatherService)
 
 	r := chi.NewRouter()

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 )
 
 type WeatherResponse struct {
@@ -32,11 +31,11 @@ var (
 	weatherRequestURL = `https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f&current=temperature_2m&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`
 )
 
-func GetWeatherInfo(latitude, longitude float64) (*WeatherResponse, error) {
+func GetWeatherInfo(httpClient HttpClient, latitude, longitude float64) (*WeatherResponse, error) {
 	var weatherResponse WeatherResponse
 
 	url := fmt.Sprintf(weatherRequestURL, latitude, longitude)
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		log.Printf("request unsuccessful: %v", err)
 		return nil, err

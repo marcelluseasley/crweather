@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -18,11 +19,13 @@ type WeatherServicer interface {
 }
 
 type Service struct {
+	httpClient *http.Client
 	repo sqlite3.Storager
 }
 
-func NewWeatherService(storager sqlite3.Storager) WeatherServicer {
+func NewWeatherService(client *http.Client, storager sqlite3.Storager) WeatherServicer {
 	return &Service{
+		httpClient: client,
 		repo: storager,
 	}
 }
@@ -46,7 +49,7 @@ func (ws *Service) FetchAndProcessWeather(input, lat, long string) (models.Weath
 			return models.Weather{}, err
 		}
 	} else {
-		geoResponse, err = getGeoInfo(input)
+		geoResponse, err = getGeoInfo(ws.httpClient, input)
 		if err != nil {
 			return models.Weather{}, err
 		}
@@ -75,7 +78,7 @@ func (ws *Service) FetchAndProcessWeather(input, lat, long string) (models.Weath
 		}
 	} else {
 
-		weatherResponse, err := getWeatherInfo(latitude, longitude)
+		weatherResponse, err := getWeatherInfo(ws.httpClient, latitude, longitude)
 		if err != nil {
 			return models.Weather{}, err
 		}
@@ -173,16 +176,16 @@ func (ws *Service) processWeather(gr *meteoapi.GeoResponse, wr *meteoapi.Weather
 	return idInserted
 }
 
-func getGeoInfo(input string) (*meteoapi.GeoResponse, error) {
-	geoResponse, err := meteoapi.GetGeoInfo(input)
+func getGeoInfo(client meteoapi.HttpClient, input string) (*meteoapi.GeoResponse, error) {
+	geoResponse, err := meteoapi.GetGeoInfo(client, input)
 	if err != nil {
 		return nil, err
 	}
 	return geoResponse, nil
 }
 
-func getWeatherInfo(latitude, longitude float64) (*meteoapi.WeatherResponse, error) {
-	weatherResponse, err := meteoapi.GetWeatherInfo(latitude, longitude)
+func getWeatherInfo(client meteoapi.HttpClient, latitude, longitude float64) (*meteoapi.WeatherResponse, error) {
+	weatherResponse, err := meteoapi.GetWeatherInfo(client, latitude, longitude)
 	if err != nil {
 		return nil, err
 	}

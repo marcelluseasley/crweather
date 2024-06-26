@@ -8,6 +8,10 @@ import (
 	"net/http"
 )
 
+type HttpClient interface {
+	Get(url string) (resp *http.Response, err error)
+}
+
 type GeoResponse struct {
 	Results []Results `json:"results"`
 }
@@ -25,9 +29,9 @@ var (
 	geoRequestURL = `https://geocoding-api.open-meteo.com/v1/search?name=%s&count=10&language=en&format=json`
 )
 
-func GetGeoInfo(name string) (*GeoResponse, error) {
+func GetGeoInfo(httpClient HttpClient, name string) (*GeoResponse, error) {
 	var geoResponse GeoResponse
-	resp, err := http.Get(fmt.Sprintf(geoRequestURL, name))
+	resp, err := httpClient.Get(fmt.Sprintf(geoRequestURL, name))
 	if err != nil {
 		log.Printf("request unsuccessful: %v", err)
 		return nil, err
