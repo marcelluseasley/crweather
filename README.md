@@ -75,3 +75,4 @@ http://localhost:3000/weather/28.550014/-81.380066
 ```
 
 The browser should display the current weather and 7-day forecast.
+![Weather Results](results_page.png)
