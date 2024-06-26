@@ -11,5 +11,9 @@ type Geo struct {
 }
 
 func (g Geo) IsEmpty() bool {
-	return g.ID ==0 && g.Name == "" && g.Latitude == 0 && g.Longitude == 0
+	return g.ID == 0 && g.Name == "" && g.Latitude == 0 && g.Longitude == 0
+}
+
+func (g Geo) Expired() bool {
+	return g.RequestDate.Before(time.Now().Add(-time.Hour))
 }
