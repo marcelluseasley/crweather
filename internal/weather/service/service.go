@@ -14,7 +14,6 @@ import (
 )
 
 type WeatherServicer interface {
-	ProcessWeather(*meteoapi.GeoResponse, *meteoapi.WeatherResponse) int64
 	FetchAndProcessWeather(input, lat, long string) (models.Weather, error)
 }
 
@@ -28,6 +27,13 @@ func NewWeatherService(storager sqlite3.Storager) WeatherServicer {
 	}
 }
 
+// FetchAndProcessWeather obtains weather data based on input parameters, which can be a location name or latitude and longitude coordinates.
+// The process involves:
+// 1. Resolving the location name to geographical coordinates.
+// 2. Fetching weather information for the resolved coordinates or directly using provided coordinates if the location name is not given.
+// 3. Processing and storing the fetched weather data.
+// 4. Retrieving the final weather data from the repository for return.
+// An error is returned if any step in the process fails.
 func (ws *Service) FetchAndProcessWeather(input, lat, long string) (models.Weather, error) {
 	var latitude, longitude float64
 	var geoResponse *meteoapi.GeoResponse
@@ -51,12 +57,7 @@ func (ws *Service) FetchAndProcessWeather(input, lat, long string) (models.Weath
 		longitude = geoResponse.Results[0].Longitude
 	}
 
-	weatherResponse, err := getWeatherInfo(latitude, longitude)
-	if err != nil {
-		return models.Weather{}, err
-	}
-
-	weatherLookupID = ws.ProcessWeather(geoResponse, weatherResponse)
+	// think of geo table kind of like a cache...
 	geoData, err := ws.repo.RetrieveGeo(latitude, longitude)
 	if err != nil {
 		log.Printf("error: %v", err)
@@ -64,13 +65,23 @@ func (ws *Service) FetchAndProcessWeather(input, lat, long string) (models.Weath
 	}
 
 	var weatherData models.Weather
-	if !geoData.IsEmpty() {
 
+	// shouldn't be empty, but double check
+	// also check if the data is older than an hour from now...if so, its no good
+	if !geoData.IsEmpty() && !geoData.Expired() {
 		weatherData, err = ws.repo.RetrieveWeatherFromGeo(int64(geoData.ID))
 		if err != nil {
 			return models.Weather{}, err
 		}
 	} else {
+
+		weatherResponse, err := getWeatherInfo(latitude, longitude)
+		if err != nil {
+			return models.Weather{}, err
+		}
+
+		weatherLookupID = ws.processWeather(geoResponse, weatherResponse)
+
 		weatherData, err = ws.repo.RetrieveWeather(weatherLookupID)
 		if err != nil {
 			return models.Weather{}, err
@@ -109,7 +120,17 @@ func getLatLong(lat, long string) (float64, float64, error) {
 	return latitude, longitude, nil
 }
 
-func (ws *Service) ProcessWeather(gr *meteoapi.GeoResponse, wr *meteoapi.WeatherResponse) int64 {
+// processWeather takes care of handling both weather and geographical data that we get from meteoapi.
+// We need two things to make it work: a GeoResponse, which holds all our geographical info, and a WeatherResponse, which has our weather details.
+// Here's what it does step by step:
+// 1. It checks if we've got a valid GeoResponse. If we do, it grabs the location's name, its latitude and longitude, and the date we made the request, and saves all that info into our database.
+// 2. If we don't have any weather data (meaning our WeatherResponse is empty), we just stop right there and return -1. This tells us something went wrong because we can't process weather data if we don't have any.
+// 3. If we managed to save our geographical info successfully, we link that data with its corresponding weather data using the database ID.
+// 4. From our WeatherResponse, we pull out the current weather conditions, where exactly in the world this is happening, what the weather's going to be like for the coming week, including the highs and lows for each day.
+// 5. All this detailed weather data then gets stored in the database.
+// 6. If something goes wrong while we're trying to save this data, we make a note of the error but keep going.
+// In the end, we return the database ID for the weather data we've just stored. If we didn't have any weather data to start with, we return -1.
+func (ws *Service) processWeather(gr *meteoapi.GeoResponse, wr *meteoapi.WeatherResponse) int64 {
 	var geoData models.Geo
 	var geoID int64
 	var weatherData models.Weather
@@ -133,6 +154,7 @@ func (ws *Service) ProcessWeather(gr *meteoapi.GeoResponse, wr *meteoapi.Weather
 	weatherData.Longitude = wr.Longitude
 	weatherData.DailyDates = strings.Join(wr.Daily.Time, ",")
 
+	// need to join the data for storage; need to convert to string before joining
 	dailyMin := make([]string, len(wr.Daily.Temperature2MMin))
 	for i, temp := range wr.Daily.Temperature2MMin {
 		dailyMin[i] = fmt.Sprintf("%.2f", temp)
