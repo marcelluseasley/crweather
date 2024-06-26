@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Weather For Your Choice</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+</head>
+
+<body>
+    <h1 class="text-center">Weather Report</h1>
+    <div>
+        <h2 class="text-center">Location Details</h2>
+
+        <p class="text-center"><strong>Latitude:</strong> {{.Latitude}}</p>
+        <p class="text-center"><strong>Longitude:</strong> {{.Longitude}}</p>
+    </div>
+    <div>
+        <h2 class="text-center">Current Weather</h2>
+        <p class="text-center"><strong>Current Temperature:</strong> {{.Current}}°C</p>
+    </div>
+    <div>
+        <h2 class="text-center">Daily Forecast</h2>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+
+                    <th class="text-center">Date</th>
+                    <th class="text-center">Max Temperature (°C)</th>
+                    <th class="text-center">Min Temperature (°C)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range $index, $element := .Daily.Time}}
+                <tr>
+                    <td class="text-center">{{$element}}</td>
+                    <td class="text-center">{{index $.Daily.Temperature2MMax $index}}</td>
+                    <td class="text-center">{{index $.Daily.Temperature2MMin $index}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</body>
+
+</html>
