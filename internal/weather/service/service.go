@@ -92,8 +92,8 @@ func (ws *Service) FetchAndProcessWeather(input, lat, long string) (models.Weath
 	}
 
 	weatherData.Daily.Time = strings.Split(weatherData.DailyDates, ",")
-	weatherData.Daily.Temperature2MMax = stringSliceToFloatSlice(strings.Split(weatherData.DailyMin, ","))
-	weatherData.Daily.Temperature2MMin = stringSliceToFloatSlice(strings.Split(weatherData.DailyMax, ","))
+	weatherData.Daily.Temperature2MMax = stringSliceToFloatSlice(strings.Split(weatherData.DailyMax, ","))
+	weatherData.Daily.Temperature2MMin = stringSliceToFloatSlice(strings.Split(weatherData.DailyMin, ","))
 	return weatherData, nil
 }
 
