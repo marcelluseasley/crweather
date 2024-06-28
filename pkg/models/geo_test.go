@@ -2,6 +2,7 @@ package models
 
 import (
 	"testing"
+	"time"
 )
 
 func TestGeo_IsEmpty(t *testing.T) {
@@ -61,6 +62,35 @@ func TestGeo_IsEmpty(t *testing.T) {
 			}
 			if got := g.IsEmpty(); got != tt.want {
 				t.Errorf("Geo.IsEmpty() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGeo_Expired(t *testing.T) {
+	tests := []struct {
+		name        string
+		RequestDate time.Time
+		want        bool
+	}{
+		{
+			name: "request date longer than an hour ago",
+			RequestDate: time.Now().Add(-65 * time.Minute),
+			want: true,
+		},
+		{
+			name: "request date only 5 minutes ago",
+			RequestDate: time.Now().Add(-5 * time.Minute),
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := Geo{
+				RequestDate: tt.RequestDate,
+			}
+			if got := g.Expired(); got != tt.want {
+				t.Errorf("Geo.Expired() = %v, want %v", got, tt.want)
 			}
 		})
 	}
